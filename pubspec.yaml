@@ -63,6 +63,7 @@ flutter:
   assets:
     - lib/assets/imagenes/barquitoIA.jpg
     - lib/assets/imagenes/logo.png
+    - lib/assets/imagenes/barcoia.jpg
 
   fonts:
     - family: JollyLodger

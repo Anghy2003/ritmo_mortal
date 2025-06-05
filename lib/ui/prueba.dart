@@ -14,7 +14,7 @@ class _ProximityDemoState extends State<ProximityDemo> {
     super.initState();
     ProximitySensor.events.listen((int event) {
       setState(() {
-        _isNear = event > 0; // 1 = cerca, 0 = lejos
+        _isNear = event > 0; 
       });
     });
   }

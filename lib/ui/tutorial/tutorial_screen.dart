@@ -7,7 +7,7 @@ import 'package:ritmo_mortal_application/ui/tutorial/Tutopag5.dart';
 
 class TutorialScreen extends StatelessWidget {
   const TutorialScreen({super.key});
-
+//diferentes paginas de los tutoriales
   @override
   Widget build(BuildContext context) {
     return Scaffold(
