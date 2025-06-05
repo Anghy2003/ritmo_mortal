@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:ritmo_mortal_application/ui/prueba.dart';
+import 'package:ritmo_mortal_application/ui/level1_screen.dart';
+
 import 'package:ritmo_mortal_application/ui/tutorial/tutorial_screen.dart';
 
 class Menu extends StatelessWidget {
@@ -69,7 +70,7 @@ class MenuButton extends StatelessWidget {
           );
         } else if (texto == 'JUGAR') {
          
-          Navigator.push(context, MaterialPageRoute(builder: (context) => ProximityDemo()));//nos leva al primer nivel 
+          Navigator.push(context, MaterialPageRoute(builder: (context) => JuegoNivel1()));//nos leva al primer nivel 
           
         }
       },
