@@ -1,11 +1,46 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:ritmo_mortal_application/ui/level1_screen.dart';
+import 'package:just_audio/just_audio.dart';
+import 'package:ritmo_mortal_application/ui/tutorial/Tutopag1.dart';
 
-import 'package:ritmo_mortal_application/ui/tutorial/tutorial_screen.dart';
+// Importar efectos de lluvia y rayos
+import 'package:ritmo_mortal_application/ui/widgets/rain_effect.dart';
 
-class Menu extends StatelessWidget {
+import 'package:ritmo_mortal_application/ui/widgets/rhythm_indicador.dart';
+import 'package:ritmo_mortal_application/ui/widgets/seleccionarjugador.dart';
+
+class Menu extends StatefulWidget {
   const Menu({super.key});
+
+  @override
+  State<Menu> createState() => _MenuState();
+}
+
+class _MenuState extends State<Menu> {
+  late AudioPlayer _audioPlayer;
+
+  @override
+  void initState() {
+    super.initState();
+    _iniciarMusicaFondo();
+  }
+
+  void _iniciarMusicaFondo() async {
+    _audioPlayer = AudioPlayer();
+    try {
+      await _audioPlayer.setLoopMode(LoopMode.one); // repetir
+      await _audioPlayer.setAsset('assets/sonidos/fondomenu.mp3');
+      _audioPlayer.play();
+    } catch (e) {
+      debugPrint('Error al reproducir audio: $e');
+    }
+  }
+
+  @override
+  void dispose() {
+    _audioPlayer.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -14,16 +49,23 @@ class Menu extends StatelessWidget {
         children: [
           SizedBox.expand(
             child: Image.asset(
-              'lib/assets/imagenes/barquitoIA.jpg', // usa tu imagen aquí
+              'lib/assets/imagenes/barquitoIA.jpg',
               fit: BoxFit.cover,
             ),
           ),
+
+          // Efecto de lluvia
+          const RainEffect(),
+
+          // Efecto de rayos
+          const LightningEffect(),
+
           Padding(
             padding: const EdgeInsets.only(left: 45, top: 40),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
-                Text(
+              children: [
+                const Text(
                   'DEADLY RHYTHM',
                   style: TextStyle(
                     fontFamily: 'JollyLodger',
@@ -32,12 +74,12 @@ class Menu extends StatelessWidget {
                     letterSpacing: 2,
                   ),
                 ),
-                SizedBox(height: 18),
-                MenuButton(texto: 'JUGAR'),
-                SizedBox(height: 18),
-                MenuButton(texto: 'TUTORIAL'),
-                SizedBox(height: 18),
-                MenuButton(texto: 'SALIR'),
+                const SizedBox(height: 18),
+                MenuButton(texto: 'JUGAR', audioPlayer: _audioPlayer),
+                const SizedBox(height: 18),
+                MenuButton(texto: 'TUTORIAL', audioPlayer: _audioPlayer),
+                const SizedBox(height: 18),
+                MenuButton(texto: 'SALIR', audioPlayer: _audioPlayer),
               ],
             ),
           ),
@@ -54,24 +96,32 @@ class Menu extends StatelessWidget {
 
 class MenuButton extends StatelessWidget {
   final String texto;
+  final AudioPlayer audioPlayer;
 
-  const MenuButton({super.key, required this.texto});
+  const MenuButton({
+    super.key,
+    required this.texto,
+    required this.audioPlayer,
+  });
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {
+      onTap: () async {
+        await audioPlayer.stop();
+
         if (texto == 'SALIR') {
-          SystemNavigator.pop(); // Cierra la app
+          SystemNavigator.pop();
         } else if (texto == 'TUTORIAL') {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => const TutorialScreen()),//nos manda alos tutoriales
+            MaterialPageRoute(builder: (context) =>  Tutopag()),
           );
         } else if (texto == 'JUGAR') {
-         
-          Navigator.push(context, MaterialPageRoute(builder: (context) => JuegoNivel1()));//nos leva al primer nivel 
-          
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => SeleccionJugadoresScreen()),
+          );
         }
       },
       child: Text(

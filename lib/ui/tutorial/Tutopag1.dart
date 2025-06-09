@@ -1,29 +1,68 @@
 import 'package:flutter/material.dart';
 
-class Tutopag1 extends StatelessWidget {
-  const Tutopag1({super.key});
+// Importa el efecto de lluvia
+import 'package:ritmo_mortal_application/ui/widgets/rain_effect.dart';
+
+class Tutopag extends StatefulWidget {
+  const Tutopag({super.key});
+
+  @override
+  State<Tutopag> createState() => _TutopagState();
+}
+
+class _TutopagState extends State<Tutopag> {
+ final List<String> tutorialTexts = const [
+  'Has despertado en un navío maldito. Eres el único con sentido del ritmo capaz de liberar el barco de la maldición. Los tambores retumban y los espíritus acechan. Solo reaccionando al ritmo y superando cada desafío podrás escapar.',
+
+  '“El código está en el ritmo, pirata...”. Para avanzar, debes mover tu mano al compás, detectando el peligro y la fortuna en cada movimiento. Recuerda: la música guía a los vivos, la sombra a los condenados.',
+
+  '“No es el oro lo que nos hace libres, sino el pulso del corazón...”. Acércate al sensor para salvar lo valioso y aleja la mano para evitar la maldición. Tu reflejo y velocidad decidirán el destino final del barco maldito.',
+
+  '“Solo un verdadero pirata puede desafiar al Capitán Sombra...”. Mantente atento, aumenta tu ritmo, y no permitas que el mal te alcance. La victoria está al alcance de quien domina el juego del viento, la sombra y la oscuridad.',
+];
+
+
+  int pageIndex = 0;
+
+  void _goToNext() {
+    if (pageIndex < tutorialTexts.length - 1) {
+      setState(() {
+        pageIndex++;
+      });
+    }
+  }
+
+  void _goToPrevious() {
+    if (pageIndex > 0) {
+      setState(() {
+        pageIndex--;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
         children: [
-          // Fondo principal
+          // Efecto de lluvia de fondo
+          const RainEffect(),
+
+          // Imagen de fondo con transparencia para que la lluvia se vea
           SizedBox.expand(
             child: Image.asset(
               'lib/assets/imagenes/barquitoIA.jpg',
               fit: BoxFit.cover,
+              color: Colors.black.withOpacity(0.5),
+              colorBlendMode: BlendMode.darken,
             ),
           ),
 
-          // Recuadro exterior blanco translúcido
           Center(
             child: Container(
-              constraints: const BoxConstraints(maxWidth: 850),
-              margin: const EdgeInsets.symmetric(horizontal: 40, vertical: 50),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-              ),
+              constraints: const BoxConstraints(maxWidth: 600, minHeight: 600),
+              margin: const EdgeInsets.symmetric(horizontal: 30, vertical: 30),
+              decoration: BoxDecoration(color: Colors.white.withOpacity(0.2)),
               padding: const EdgeInsets.all(6),
               child: Container(
                 color: Colors.black.withOpacity(0.85),
@@ -35,7 +74,6 @@ class Tutopag1 extends StatelessWidget {
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Recuadro interno oscuro con imagen y logo
                           Container(
                             width: 160,
                             decoration: BoxDecoration(
@@ -45,7 +83,6 @@ class Tutopag1 extends StatelessWidget {
                             child: Stack(
                               alignment: Alignment.center,
                               children: [
-                                // Fondo interno: barco otra vez
                                 Opacity(
                                   opacity: 0.3,
                                   child: Image.asset(
@@ -55,7 +92,6 @@ class Tutopag1 extends StatelessWidget {
                                     height: 160,
                                   ),
                                 ),
-                                // Contenido encima
                                 Column(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
@@ -69,7 +105,7 @@ class Tutopag1 extends StatelessWidget {
                                       'CAPITÁN',
                                       style: TextStyle(
                                         fontFamily: 'JollyLodger',
-                                        fontSize: 20,
+                                        fontSize: 28,
                                         color: Colors.white,
                                       ),
                                     ),
@@ -81,30 +117,27 @@ class Tutopag1 extends StatelessWidget {
                                         textAlign: TextAlign.center,
                                         style: TextStyle(
                                           fontFamily: 'JollyLodger',
-                                          fontSize: 12,
+                                          fontSize: 18,
                                           color: Colors.white,
                                         ),
                                       ),
                                     ),
-                                    const SizedBox(height: 10),
+                                    const SizedBox(height: 11),
                                   ],
                                 )
                               ],
                             ),
                           ),
-
-                          const SizedBox(width: 20),
-
-                          // Texto principal sin saltos de línea
-                          const Expanded(
+                          const SizedBox(width: 23),
+                          Expanded(
                             child: Padding(
-                              padding: EdgeInsets.only(top: 10),
+                              padding: const EdgeInsets.only(top: 10),
                               child: Text(
-                                'Has despertado en un navío maldito. Eres el único con sentido del ritmo capaz de liberar el barco de la maldición. Los tambores retumban. Los espíritus acechan. Solo reaccionando al ritmo y superando cada desafío sensorial podrás escapar.',
+                                tutorialTexts[pageIndex],
                                 textAlign: TextAlign.left,
-                                style: TextStyle(
+                                style: const TextStyle(
                                   fontFamily: 'JollyLodger',
-                                  fontSize: 18,
+                                  fontSize: 26,
                                   color: Colors.white,
                                 ),
                               ),
@@ -112,39 +145,66 @@ class Tutopag1 extends StatelessWidget {
                           ),
                         ],
                       ),
-
                       const SizedBox(height: 20),
-
-                      // VOLVER + puntos
                       Row(
                         children: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(context),
-                            child: const Text(
-                              'VOLVER',
-                              style: TextStyle(
-                                fontFamily: 'JollyLodger',
-                                fontSize: 23,
-                                color: Colors.white,
+                          SizedBox(
+                            width: 90,
+                            height: 40,
+                            child: TextButton(
+                              onPressed: () => Navigator.pop(context),
+                              style: TextButton.styleFrom(padding: EdgeInsets.zero),
+                              child: const Center(
+                                child: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(
+                                    'VOLVER',
+                                    style: TextStyle(
+                                      fontFamily: 'JollyLodger',
+                                      fontSize: 23,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
                               ),
                             ),
                           ),
                           const Spacer(),
+                          IconButton(
+                            onPressed: _goToPrevious,
+                            icon: Icon(
+                              Icons.arrow_back_ios,
+                              color: pageIndex == 0 ? Colors.grey : Colors.white,
+                              size: 24,
+                            ),
+                            tooltip: 'Página anterior',
+                          ),
+                          const SizedBox(width: 10),
                           Row(
-                            children: List.generate(6, (index) {
+                            children: List.generate(4, (index) {
                               return Container(
                                 margin: const EdgeInsets.symmetric(horizontal: 4),
-                                width: 14,
-                                height: 14,
+                                width: 16,
+                                height: 16,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  color: index == 0
-                                      ? Colors.blue
-                                      : Colors.white,
+                                  color: index == pageIndex ? Colors.blue : Colors.white,
                                   border: Border.all(color: Colors.black),
                                 ),
                               );
                             }),
+                          ),
+                          const SizedBox(width: 10),
+                          IconButton(
+                            onPressed: _goToNext,
+                            icon: Icon(
+                              Icons.arrow_forward_ios,
+                              color: pageIndex == tutorialTexts.length - 1
+                                  ? Colors.grey
+                                  : Colors.white,
+                              size: 24,
+                            ),
+                            tooltip: 'Página siguiente',
                           ),
                         ],
                       ),
