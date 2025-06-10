@@ -14,7 +14,10 @@ dependencies:
   proximity_sensor: ^1.3.8
   just_audio: ^0.9.36
   provider: ^6.0.5
- 
+  camera: ^0.10.5
+  google_mlkit_commons: ^0.7.0
+  google_mlkit_pose_detection: ^0.11.0
+  permission_handler: ^11.0.0
 
 dev_dependencies:
   flutter_test:
@@ -61,6 +64,8 @@ flutter:
     - lib/assets/imagenes/piratita.png
     - lib/assets/imagenes/barril.png
     - lib/assets/imagenes/monedas.png
+    - lib/assets/imagenes/1persona.png
+    - lib/assets/imagenes/2personas.png
 
 
   fonts:

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import 'package:ritmo_mortal_application/ui/level1_screen.dart';
 
 class SeleccionJugadoresScreen extends StatelessWidget {
@@ -18,10 +17,10 @@ class SeleccionJugadoresScreen extends StatelessWidget {
             ),
           ),
 
-          // Capa semi-transparente
+          // Capa semi-transparente general
           Positioned.fill(
             child: Container(
-              color: Colors.black.withOpacity(0.7),
+              color: Colors.black.withOpacity(0.4),
             ),
           ),
 
@@ -43,14 +42,14 @@ class SeleccionJugadoresScreen extends StatelessWidget {
 
                 // Sección de opciones
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 30),
+                  padding: const EdgeInsets.symmetric(horizontal: 40),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
                       _opcionJugador(
                         context,
                         titulo: '1Persona',
-                        imagen: 'lib/assets/imagenes/barquitoIA.jpg',
+                        imagen: 'lib/assets/imagenes/1persona.png',
                         onTap: () {
                           Navigator.push(
                             context,
@@ -63,7 +62,7 @@ class SeleccionJugadoresScreen extends StatelessWidget {
                       _opcionJugador(
                         context,
                         titulo: '2Personas',
-                        imagen: 'lib/assets/imagenes/barquitoIA.jpg',
+                        imagen: 'lib/assets/imagenes/2personas.png',
                         onTap: () {
                           Navigator.push(
                             context,
@@ -121,10 +120,18 @@ class SeleccionJugadoresScreen extends StatelessWidget {
             height: 150,
             decoration: BoxDecoration(
               border: Border.all(color: Colors.white, width: 2),
-              image: DecorationImage(
-                image: AssetImage(imagen),
-                fit: BoxFit.cover,
-              ),
+            ),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                Image.asset(
+                  imagen,
+                  fit: BoxFit.cover,
+                ),
+                Container(
+                  color: Colors.black.withOpacity(0.4),
+                ),
+              ],
             ),
           ),
         ],

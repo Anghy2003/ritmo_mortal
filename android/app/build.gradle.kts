@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace = "com.example.ritmo_mortal_application"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 35
     ndkVersion = "27.0.12077973"
 
     compileOptions {
@@ -21,14 +21,22 @@ android {
     defaultConfig {
         applicationId = "com.example.ritmo_mortal_application"
         minSdk = 23
-        targetSdk = flutter.targetSdkVersion
-        versionCode = flutter.versionCode
-        versionName = flutter.versionName
+        targetSdk = 35
+        versionCode = 1
+        versionName = "1.0.0"
     }
 
     buildTypes {
         release {
             signingConfig = signingConfigs.getByName("debug")
+
+            isMinifyEnabled = true          // Activar minificación (code shrinking)
+            isShrinkResources = true        // Activar eliminación de recursos no usados
+
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
         }
     }
 }

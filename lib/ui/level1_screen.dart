@@ -1,10 +1,19 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:camera/camera.dart';
+import 'package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:ritmo_mortal_application/ui/juego1/game_logic.dart';
 import 'package:ritmo_mortal_application/ui/juego1/proximity_service.dart';
 
+
+
 class JuegoNivel1 extends StatefulWidget {
-  final int numeroJugadores; // 1 o 2
+  final int numeroJugadores;
 
   const JuegoNivel1({Key? key, this.numeroJugadores = 1}) : super(key: key);
 
@@ -17,6 +26,7 @@ class _JuegoNivel1State extends State<JuegoNivel1> with TickerProviderStateMixin
   final ProximityService proximityService = ProximityService();
 
   bool isNear = false;
+  bool usandoCamara = false;
   bool mostrandoCuenta = true;
   int cuentaRegresiva = 3;
   bool falloVisual = false;
@@ -28,54 +38,51 @@ class _JuegoNivel1State extends State<JuegoNivel1> with TickerProviderStateMixin
 
   late AnimationController _escalaController;
   late Animation<double> escalaAnimada;
-
   Offset objetoOffset = Offset.zero;
 
   Timer? _timerCuenta;
   Timer? _timerJuego;
   Timer? _mensajeTimer;
 
+  // Cámara y pose detection
+  late CameraController _cameraController;
+  late PoseDetector _poseDetector;
+  List<CameraDescription> _cameras = [];
+  bool manoDetectada = false;
+
   @override
   void initState() {
     super.initState();
-
-    _escalaController = AnimationController(
-      vsync: this,
-      duration: Duration(milliseconds: 600),
-    );
+    _escalaController = AnimationController(vsync: this, duration: Duration(milliseconds: 600));
     escalaAnimada = Tween<double>(begin: 0.8, end: 1.2).animate(
       CurvedAnimation(parent: _escalaController, curve: Curves.easeInOut),
     );
-
     _verificarSensorYEmpezar();
   }
 
-  void _verificarSensorYEmpezar() async {
+  Future<void> _verificarSensorYEmpezar() async {
     final disponible = await proximityService.isSensorAvailable();
+    await gameLogic.cargarAudios();
+
     if (!disponible) {
-      if (!mounted) return;
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (_) => AlertDialog(
-          title: Text('Sensor no disponible', style: TextStyle(fontFamily: 'JollyLodger')),
-          content: Text('Este dispositivo no tiene sensor de proximidad.', style: TextStyle(fontFamily: 'JollyLodger')),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                Navigator.of(context).pop();
-              },
-              child: Text('Salir', style: TextStyle(fontFamily: 'JollyLodger')),
-            ),
-          ],
-        ),
-      );
-      return;
+      usandoCamara = true;
+      await _iniciarDeteccionCamara();
     }
 
-    await gameLogic.cargarAudios();
     _startCuentaRegresiva();
+  }
+
+  Future<void> _iniciarDeteccionCamara() async {
+    await Permission.camera.request();
+    _cameras = await availableCameras();
+    _cameraController = CameraController(
+      _cameras.firstWhere((c) => c.lensDirection == CameraLensDirection.front,
+          orElse: () => _cameras.first),
+      ResolutionPreset.medium,
+      enableAudio: false,
+    );
+    await _cameraController.initialize();
+    _poseDetector = PoseDetector(options: PoseDetectorOptions());
   }
 
   void _startCuentaRegresiva() {
@@ -92,7 +99,11 @@ class _JuegoNivel1State extends State<JuegoNivel1> with TickerProviderStateMixin
   }
 
   void _startJuego() {
-    _startListeningSensor();
+    if (usandoCamara) {
+      _startDeteccionMano();
+    } else {
+      _startListeningSensor();
+    }
     _nuevoObjeto();
     _startTemporizadorJuego();
   }
@@ -100,15 +111,57 @@ class _JuegoNivel1State extends State<JuegoNivel1> with TickerProviderStateMixin
   void _startListeningSensor() {
     proximityService.startListening((bool near) {
       if (!mounted || juegoTerminado) return;
-
       if (!evaluando) {
-        setState(() {
-          isNear = near;
-        });
+        setState(() => isNear = near);
         _evaluarDecision(near);
       }
     });
   }
+
+ void _startDeteccionMano() {
+  _cameraController.startImageStream((CameraImage image) async {
+    if (!mounted || juegoTerminado || evaluando) return;
+
+    final WriteBuffer allBytes = WriteBuffer();
+    for (final plane in image.planes) {
+      allBytes.putUint8List(plane.bytes);
+    }
+
+    final bytes = allBytes.done().buffer.asUint8List();
+
+   final inputImage = InputImage.fromBytes(
+  bytes: bytes,
+  metadata: InputImageMetadata(
+    size: Size(image.width.toDouble(), image.height.toDouble()),
+    rotation: InputImageRotation.rotation0deg, // Enum correcto
+    format: InputImageFormat.nv21,             // Enum correcto
+    bytesPerRow: image.planes.first.bytesPerRow,
+  ),
+);
+
+    final poses = await _poseDetector.processImage(inputImage);
+
+    if (poses.isNotEmpty) {
+      manoDetectada = true;
+    } else {
+      manoDetectada = false;
+    }
+
+    for (final pose in poses) {
+      final wrist = pose.landmarks[PoseLandmarkType.rightWrist];
+      final head = pose.landmarks[PoseLandmarkType.nose];
+
+      if (wrist != null && head != null && !evaluando) {
+        if ((wrist.y - head.y).abs() < 80) {
+          _evaluarDecision(true);
+        } else {
+          _evaluarDecision(false);
+        }
+      }
+    }
+  });
+}
+
 
   void _startTemporizadorJuego() {
     _timerJuego = Timer.periodic(Duration(seconds: 1), (timer) {
@@ -124,59 +177,40 @@ class _JuegoNivel1State extends State<JuegoNivel1> with TickerProviderStateMixin
 
   void _nuevoObjeto() {
     if (!mounted || juegoTerminado || evaluando) return;
-
     final size = MediaQuery.of(context).size;
     final offsetX = gameLogic.random.nextDouble() * (size.width - 150);
     final offsetY = 200 + gameLogic.random.nextDouble() * (size.height - 400);
-
     setState(() {
       gameLogic.generarNuevoObjeto();
       objetoOffset = Offset(offsetX, offsetY);
       falloVisual = false;
       capitanVisible = false;
     });
-
     _escalaController.forward(from: 0);
-
-    gameLogic.iniciarTemporizadorDecision(() {
-      _evaluarDecision(null);
-    });
+    gameLogic.iniciarTemporizadorDecision(() => _evaluarDecision(null));
   }
 
   void _evaluarDecision(bool? decision) async {
     if (evaluando || juegoTerminado) return;
-
     evaluando = true;
     gameLogic.cancelarTemporizador();
 
-    bool? acierto;
-
-    if (decision == null) {
-      acierto = false;
-    } else {
-      acierto = await gameLogic.evaluarDecision(decision);
-    }
+    final acierto = decision == true ? await gameLogic.evaluarDecision(true) : false;
 
     if (!mounted) return;
-
     setState(() {
-      mensaje = acierto == true ? "¡Bien!" : "¡Error!";
-      falloVisual = acierto == false;
-      capitanVisible = acierto == false;
+      mensaje = acierto ? "¡Bien!" : "¡Error!";
+      falloVisual = !acierto;
+      capitanVisible = !acierto;
     });
 
     _mensajeTimer?.cancel();
     _mensajeTimer = Timer(Duration(milliseconds: 600), () {
-      if (!mounted) return;
-      setState(() => mensaje = '');
+      if (mounted) setState(() => mensaje = '');
     });
 
     await Future.delayed(Duration(milliseconds: 600));
-
-    if (widget.numeroJugadores == 2) {
-      gameLogic.cambiarTurno();
-    }
-
+    if (widget.numeroJugadores == 2) gameLogic.cambiarTurno();
     evaluando = false;
     _nuevoObjeto();
   }
@@ -186,6 +220,10 @@ class _JuegoNivel1State extends State<JuegoNivel1> with TickerProviderStateMixin
     juegoTerminado = true;
     _timerJuego?.cancel();
     proximityService.stopListening();
+
+    if (usandoCamara) {
+      _cameraController.stopImageStream();
+    }
 
     final puntaje1 = gameLogic.puntajes[1] ?? 0;
     final puntaje2 = gameLogic.puntajes[2] ?? 0;
@@ -223,6 +261,10 @@ class _JuegoNivel1State extends State<JuegoNivel1> with TickerProviderStateMixin
   @override
   void dispose() {
     proximityService.stopListening();
+    if (usandoCamara) {
+      _cameraController.dispose();
+      _poseDetector.close();
+    }
     _timerCuenta?.cancel();
     _timerJuego?.cancel();
     _mensajeTimer?.cancel();
@@ -244,6 +286,13 @@ class _JuegoNivel1State extends State<JuegoNivel1> with TickerProviderStateMixin
               colorBlendMode: BlendMode.darken,
             ),
           ),
+          if (usandoCamara && _cameraController.value.isInitialized)
+            Positioned.fill(
+              child: Opacity(
+                opacity: 0.2,
+                child: CameraPreview(_cameraController),
+              ),
+            ),
           if (gameLogic.objetoActual != null && !mostrandoCuenta)
             Positioned(
               left: objetoOffset.dx,
